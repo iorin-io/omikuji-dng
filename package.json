@@ -15,7 +15,8 @@
 	"dependencies": {
 		"next": "15.3.2",
 		"react": "^19.0.0",
-		"react-dom": "^19.0.0"
+		"react-dom": "^19.0.0",
+		"receiptline": "^1.16.2"
 	},
 	"devDependencies": {
 		"@cloudflare/next-on-pages": "^1.13.12",
