@@ -2,7 +2,7 @@
 import { fortuneSystemPrompt } from "../prompts/fortuneSystemPrompt";
 import OpenAI from "openai";
 
-export type FortuneRank = "大吉" | "中吉" | "小吉" | "吉" | "凶";
+export type FortuneRank = "大吉" | "中吉" | "小吉" | "吉" | "末吉" | "凶";
 
 export interface FortuneData {
   summary: string;

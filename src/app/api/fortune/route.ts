@@ -6,12 +6,12 @@ import { generateFortuneText } from "../../../lib/aiFortune";
 export async function POST(req: Request) {
   const { rank } = (await req.json()) as { rank?: FortuneRank };
 
-  const validRanks = ["大吉", "中吉", "小吉", "吉", "凶"] as const;
+  const validRanks = ["大吉", "中吉", "小吉", "吉", "末吉", "凶"] as const;
   if (!rank || !validRanks.includes(rank as FortuneRank)) {
     return NextResponse.json(
       {
         error:
-          "rank は 大吉・中吉・小吉・吉・凶 のいずれかで指定してください。",
+          "rank は 大吉・中吉・小吉・吉・末吉・凶 のいずれかで指定してください。",
       },
       { status: 400 }
     );
