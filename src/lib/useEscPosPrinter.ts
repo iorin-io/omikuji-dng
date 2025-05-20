@@ -3,7 +3,7 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
 import * as Enc from "encoding-japanese";
-import { textToRaster } from "./textToRaster";
+import { textToRaster, textToRasterCenter } from "./textToRaster";
 
 type Status = "idle" | "connecting" | "printing" | "done" | "error";
 
@@ -111,7 +111,10 @@ export function useEscPosPrinter() {
     if (!deviceRef.current) throw new Error("Device not connected");
     setStatus("printing");
 
-    const { widthDot, heightDot, rowBytes, data } = textToRaster(text, 20);
+    const { widthDot, heightDot, rowBytes, data } = textToRasterCenter(
+      text,
+      60
+    );
 
     console.log("widthDot", widthDot);
     console.log("heightDot", heightDot);
