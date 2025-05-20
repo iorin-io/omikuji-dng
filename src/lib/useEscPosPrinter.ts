@@ -72,10 +72,11 @@ export function useEscPosPrinter() {
   type PrintBitmapOptions = {
     text: string;
     place?: "right" | "center";
+    fontSize?: number;
   };
 
   const printBitmap = useCallback(
-    async ({ text, place = "right" }: PrintBitmapOptions) => {
+    async ({ text, place = "right", fontSize = 20 }: PrintBitmapOptions) => {
       if (!deviceRef.current) throw new Error("Device not connected");
       setStatus("printing");
 
@@ -84,10 +85,13 @@ export function useEscPosPrinter() {
       if (place === "center") {
         ({ widthDot, heightDot, rowBytes, data } = textToRasterCenter(
           text,
-          60
+          fontSize
         ));
       } else {
-        ({ widthDot, heightDot, rowBytes, data } = textToRaster(text, 20));
+        ({ widthDot, heightDot, rowBytes, data } = textToRaster(
+          text,
+          fontSize
+        ));
       }
 
       console.log("widthDot", widthDot);

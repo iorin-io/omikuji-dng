@@ -16,6 +16,7 @@
     "@types/w3c-web-serial": "^1.0.8",
     "encoding-japanese": "^2.2.0",
     "next": "15.3.2",
+    "openai": "^4.100.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

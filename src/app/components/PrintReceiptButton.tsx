@@ -3,19 +3,18 @@
 import { useEscPosPrinter } from "@/lib/useEscPosPrinter";
 
 export default function PrintReceiptButton() {
-  const { status, connect, print, printBitmap, printBitmapCenter } =
-    useEscPosPrinter();
+  const { status, connect, print, printBitmap } = useEscPosPrinter();
 
   const handlePrint = async () => {
     const ok = await connect();
     if (ok) {
-      // await print(`debug`);
-      // await printBitmapDebug();
-      await printBitmapCenter(`大吉`);
-
-      // await print(`-------bitmap------`);
-      await printBitmap(`そのころわたくしは、モリーオ市の博物局に勤めて居りました。
-`);
+      await printBitmap({ text: `大吉`, place: "center", fontSize: 60 });
+      await print(`--------------------`);
+      await printBitmap({
+        text: `そのころわたくしは、モリーオ市の博物局に勤めて居りました。
+`,
+        fontSize: 20,
+      });
     }
   };
 
