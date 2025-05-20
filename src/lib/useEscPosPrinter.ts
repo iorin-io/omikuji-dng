@@ -2,8 +2,10 @@
 // app/lib/useEscPosPrinter.ts
 "use client";
 import { useState, useCallback, useRef } from "react";
+import QRCode from "qrcode";
 import * as Enc from "encoding-japanese";
 import { textToRaster, textToRasterCenter } from "./textToRaster";
+import { imageDataToRaster } from "./imageDataToRaster";
 
 type Status = "idle" | "connecting" | "printing" | "done" | "error";
 
@@ -15,20 +17,36 @@ export function useEscPosPrinter() {
   /** デバイス選択 & Open */
   const connect = useCallback(async () => {
     setStatus("connecting");
+
     try {
-      const usb = await navigator.usb.requestDevice({
-        filters: [{ vendorId: 0x0416, productId: 0x5011 }],
-      });
+      let usb: USBDevice | null = deviceRef.current;
+      if (!usb) {
+        const devices = await navigator.usb.getDevices();
+        usb =
+          devices.find(
+            (d) => d.vendorId === 0x0416 && d.productId === 0x5011
+          ) ?? null;
+      }
 
-      await usb.open();
-      if (!usb.configuration) await usb.selectConfiguration(1);
-      await usb.claimInterface(0);
+      if (!usb) {
+        usb = await navigator.usb.requestDevice({
+          filters: [{ vendorId: 0x0416, productId: 0x5011 }],
+        });
+      }
 
-      deviceRef.current = usb; // ← ref に格納
+      if (!usb.opened) {
+        await usb.open();
+        if (usb.configuration === null) {
+          await usb.selectConfiguration(1);
+        }
+        await usb.claimInterface(0);
+      }
+
+      deviceRef.current = usb;
       setStatus("idle");
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("USB接続失敗:", e);
       setStatus("error");
       return false;
     }
@@ -55,15 +73,11 @@ export function useEscPosPrinter() {
 
     setStatus("printing");
 
-    const init = Uint8Array.from([0x1b, 0x40]);
     const body = Uint8Array.from(
       Enc.convert(text + "\n", { to: "SJIS", type: "array" })
     );
-    const cut = Uint8Array.from([0x1d, 0x56, 0x41, 0x10]);
 
-    await send(init);
     await send(body);
-    await send(cut);
 
     setStatus("done");
   }, []);
@@ -106,49 +120,98 @@ export function useEscPosPrinter() {
       const yL = heightDot & 0xff;
       const yH = heightDot >> 8;
 
-      await send(Uint8Array.from([0x1b, 0x40]), "ESC @"); // 初期化
       await send(
         Uint8Array.from([0x1d, 0x76, 0x30, m, xL, xH, yL, yH]),
         "GS v 0"
       );
       await send(data); // ラスター本体
-      for (let i = 0; i < 5; i++) {
-        await send(Uint8Array.from([0x0a]), "LF");
-      }
+
       await send(Uint8Array.from([0x1d, 0x56, 0x00, 0x10]));
 
       setStatus("done");
     },
     []
   );
+  const printSpace = useCallback(async (returnLines: number) => {
+    if (!deviceRef.current) throw new Error("Device not connected");
+    setStatus("printing");
 
-  // /* ---------- デバッグ: 正方形ベタ塗り ---------- */
+    for (let i = 0; i < returnLines; i++) {
+      await send(Uint8Array.from([0x0a]), "LF");
+    }
 
-  // const printBitmapDebug = async () => {
-  //   if (!deviceRef.current) throw new Error("not connected");
-  //   setStatus("printing");
+    setStatus("done");
+  }, []);
 
-  //   /* ------ 正方形サイズ ------ */
-  //   const sideDot = 64; // 1 辺
-  //   const cols = sideDot; // 列数
-  //   const rows24 = Math.ceil(sideDot / 24); // =3
-  //   const bytesPerRow = cols * 3; // 64×3 = 192B
-  //   const fullLine = new Uint8Array(bytesPerRow).fill(0xff);
-  //   /* ------------------------- */
+  const init = useCallback(async () => {
+    if (!deviceRef.current) throw new Error("Device not connected");
+    setStatus("printing");
+    await send(Uint8Array.from([0x1b, 0x40]), "ESC @");
+    setStatus("done");
+  }, []);
 
-  //   await send(Uint8Array.from([0x1b, 0x40]), "ESC @"); // 初期化
-  //   await send(Uint8Array.from([0x1b, 0x33, 0x00]), "ESC 3 0"); // 行間 0dot
+  const cut = useCallback(async () => {
+    if (!deviceRef.current) throw new Error("Device not connected");
+    setStatus("printing");
+    await send(Uint8Array.from([0x1d, 0x56, 0x41, 0x10]), "CUT");
+    setStatus("done");
+  }, []);
 
-  //   for (let row = 0; row < rows24; row++) {
-  //     // ESC * 24-dot ダブル密度 (m=33)
-  //     await send(Uint8Array.from([0x1b, 0x2a, 0x21, cols, 0x00]));
-  //     await send(fullLine); // 192B 黒
-  //     await send(Uint8Array.from([0x0a])); // LF → 行送り 0dot
-  //   }
+  const printQRCode = useCallback(async (url: string, size = 200) => {
+    if (!deviceRef.current) throw new Error("Device not connected");
+    setStatus("printing");
 
-  //   await send(Uint8Array.from([0x1d, 0x56, 0x41, 0x10]), "CUT");
-  //   setStatus("done");
-  // };
+    // 1. Canvas に QR を描画
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    await QRCode.toCanvas(canvas, url, {
+      width: size,
+      margin: 1,
+      color: { dark: "#000000", light: "#FFFFFF" },
+    });
 
-  return { status, connect, print, printBitmap };
+    const ctx = canvas.getContext("2d")!;
+    const imgData = ctx.getImageData(0, 0, size, size);
+    const { widthDot, heightDot, rowBytes, data } = imageDataToRaster(imgData);
+
+    console.log("widthDot", widthDot);
+    console.log("heightDot", heightDot);
+    console.log("rowBytes", rowBytes);
+    console.log("data", data);
+
+    // 2. ESC/POS でビットマップ出力
+    const m = 0; // 通常倍率
+    const xL = rowBytes & 0xff;
+    const xH = rowBytes >> 8;
+    const yL = heightDot & 0xff;
+    const yH = heightDot >> 8;
+
+    // 初期化（必要なら一度だけ外で呼び出してもOK）
+    await send(Uint8Array.from([0x1b, 0x40]), "ESC @");
+    // ビットマップ命令
+    await send(
+      Uint8Array.from([0x1d, 0x76, 0x30, m, xL, xH, yL, yH]),
+      "GS v 0"
+    );
+    // データ本体
+    await send(data, "QR raster");
+    // 改行少々
+    for (let i = 0; i < 4; i++) {
+      await send(Uint8Array.from([0x0a]), "LF");
+    }
+
+    setStatus("done");
+  }, []);
+
+  return {
+    status,
+    connect,
+    print,
+    printBitmap,
+    printSpace,
+    init,
+    cut,
+    printQRCode,
+  };
 }
