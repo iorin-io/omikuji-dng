@@ -4,16 +4,44 @@
 import { FortuneData, FortuneRank } from "../../lib/aiFortune";
 import { useEscPosPrinter } from "../../lib/useEscPosPrinter";
 import { useState } from "react";
+import styled from "styled-components";
+import { Yuji_Boku } from "next/font/google";
 
 const RANKS: FortuneRank[] = ["大吉", "中吉", "小吉", "吉", "凶"];
+
+const Button = styled.button<{ disabled: boolean }>`
+  border-radius: 1rem;
+  background-color: #dc2626;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  &:hover {
+    background-color: ${({ disabled }) => (disabled ? "#dc2626" : "#b91c1c")};
+  }
+  border: none;
+  font-size: 50px;
+`;
+
+const ErrorText = styled.p`
+  margin-top: 0.5rem;
+  color: #dc2626; /* red-500 */
+`;
+
+const yujiBoku = Yuji_Boku({
+  subsets: ["latin"],
+  weight: "400",
+});
 
 export default function PrintReceiptButton() {
   const { status, connect, printBitmap, printSpace, init, cut, printQRCode } =
     useEscPosPrinter();
   const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handlePrint = async () => {
     setError(null);
+    setIsGenerating(true);
 
     const rank = RANKS[Math.floor(Math.random() * RANKS.length)];
 
@@ -41,6 +69,8 @@ export default function PrintReceiptButton() {
       setError("運勢の取得に失敗しました");
       return;
     }
+
+    setIsGenerating(false);
 
     const ok = await connect();
     if (!ok) {
@@ -119,21 +149,28 @@ export default function PrintReceiptButton() {
 
     await cut();
   };
+  // ボタンが生成中 or 接続中 or 印刷中 のときは押せないように
+  const disabled =
+    isGenerating || status === "connecting" || status === "printing";
+
+  // 表示テキストの切り替え
+  let label = "おみくじを引く";
+  if (isGenerating) label = "ヌルの神が考え中...";
+  else if (status === "printing") label = "印刷中...";
+  else if (status === "done") label = "おみくじを引く";
 
   return (
     <>
-      <button
-        className="rounded-xl bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-        onClick={handlePrint}
-        disabled={status === "connecting" || status === "printing"}
-      >
-        {status === "printing"
-          ? "印刷中…"
-          : status === "done"
-          ? "完了！"
-          : "レシート印刷"}
-      </button>
-      {error && <p className="mt-2 text-red-500">{error}</p>}
+      <div>
+        <Button
+          onClick={handlePrint}
+          disabled={disabled}
+          className={yujiBoku.className}
+        >
+          {label}
+        </Button>
+      </div>
+      <div>{error && <ErrorText>{error}</ErrorText>}</div>
     </>
   );
 }
