@@ -4,7 +4,11 @@
 import { useState, useCallback, useRef } from "react";
 import QRCode from "qrcode";
 import * as Enc from "encoding-japanese";
-import { textToRaster, textToRasterCenter } from "./textToRaster";
+import {
+  textToRasterCenter,
+  textToRasterLeft,
+  textToRasterRight,
+} from "./textToRaster";
 import { imageDataToRaster } from "./imageDataToRaster";
 
 type Status = "idle" | "connecting" | "printing" | "done" | "error";
@@ -85,12 +89,12 @@ export function useEscPosPrinter() {
   /* ---------- ビットマップ印字（ESC * 24-dot） ---------- */
   type PrintBitmapOptions = {
     text: string;
-    place?: "right" | "center";
+    place?: "left" | "center" | "right";
     fontSize?: number;
   };
 
   const printBitmap = useCallback(
-    async ({ text, place = "right", fontSize = 20 }: PrintBitmapOptions) => {
+    async ({ text, place = "left", fontSize = 20 }: PrintBitmapOptions) => {
       if (!deviceRef.current) throw new Error("Device not connected");
       setStatus("printing");
 
@@ -101,8 +105,13 @@ export function useEscPosPrinter() {
           text,
           fontSize
         ));
+      } else if (place === "right") {
+        ({ widthDot, heightDot, rowBytes, data } = textToRasterRight(
+          text,
+          fontSize
+        ));
       } else {
-        ({ widthDot, heightDot, rowBytes, data } = textToRaster(
+        ({ widthDot, heightDot, rowBytes, data } = textToRasterLeft(
           text,
           fontSize
         ));
@@ -132,16 +141,42 @@ export function useEscPosPrinter() {
     },
     []
   );
-  const printSpace = useCallback(async (returnLines: number) => {
+
+  const printSpace = async (returnLines: number) => {
     if (!deviceRef.current) throw new Error("Device not connected");
-    setStatus("printing");
 
+    const fontSize = 20;
+    const maxWidthDot = 384;
+
+    // 1行分の空ラスタを生成
+    const { heightDot, rowBytes, data } = textToRasterCenter(
+      "", // 空文字
+      fontSize,
+      "'Noto Sans JP'",
+      maxWidthDot
+    );
+
+    // 総高さ
+    const totalHeight = heightDot * returnLines;
+
+    // ESC/POS: GS v 0 m xL xH yL yH
+    const m = 0x00;
+    const xL = rowBytes & 0xff;
+    const xH = rowBytes >> 8;
+    const yL = totalHeight & 0xff;
+    const yH = totalHeight >> 8;
+
+    // ビットマップヘッダー
+    await send(
+      Uint8Array.from([0x1d, 0x76, 0x30, m, xL, xH, yL, yH]),
+      "GS v 0"
+    );
+
+    // ラスター本体を行数分送信
     for (let i = 0; i < returnLines; i++) {
-      await send(Uint8Array.from([0x0a]), "LF");
+      await send(data, "blank raster");
     }
-
-    setStatus("done");
-  }, []);
+  };
 
   const init = useCallback(async () => {
     if (!deviceRef.current) throw new Error("Device not connected");

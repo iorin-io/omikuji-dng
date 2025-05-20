@@ -66,37 +66,41 @@ export default function PrintReceiptButton() {
     await printSpace(2);
 
     await printBitmap({
-      text: "-----恋愛運----",
+      text: "恋愛運",
       place: "center",
       fontSize: 40,
     });
+    await printSpace(1);
     await printBitmap({ text: fortune.love, fontSize: 20 });
 
     await printSpace(2);
 
     await printBitmap({
-      text: "-----仕事運----",
+      text: "仕事運",
       place: "center",
       fontSize: 40,
     });
+    await printSpace(1);
     await printBitmap({ text: fortune.work, fontSize: 20 });
 
     await printSpace(2);
 
     await printBitmap({
-      text: "-----健康運----",
+      text: "健康運",
       place: "center",
       fontSize: 40,
     });
+    await printSpace(1);
     await printBitmap({ text: fortune.health, fontSize: 20 });
 
     await printSpace(2);
 
     await printBitmap({
-      text: "-----金運----",
+      text: "金運",
       place: "center",
       fontSize: 40,
     });
+    await printSpace(1);
     await printBitmap({ text: fortune.money, fontSize: 20 });
 
     await printSpace(5);
@@ -105,8 +109,13 @@ export default function PrintReceiptButton() {
       `http://twitter.com/share?url=${newsUrl}&text=${fortune.summary}&related=labDNG,ochyai&hashtags=落合陽一,ｼﾝｷﾞｭﾗってｺﾝｳﾞｨｳﾞｨ展,ｼﾝｷﾞｭﾗみくじ`,
       350
     );
+    await printBitmap({
+      text: "#ｼﾝｷﾞｭﾗみくじ",
+      place: "right",
+      fontSize: 20,
+    });
 
-    await printSpace(3);
+    await printSpace(5);
 
     await cut();
   };
