@@ -69,85 +69,54 @@ export function useEscPosPrinter() {
   }, []);
 
   /* ---------- ビットマップ印字（ESC * 24-dot） ---------- */
-  const printBitmap = useCallback(async (text: string) => {
-    if (!deviceRef.current) throw new Error("Device not connected");
-    setStatus("printing");
+  type PrintBitmapOptions = {
+    text: string;
+    place?: "right" | "center";
+  };
 
-    const { widthDot, heightDot, rowBytes, data } = textToRaster(text, 20);
+  const printBitmap = useCallback(
+    async ({ text, place = "right" }: PrintBitmapOptions) => {
+      if (!deviceRef.current) throw new Error("Device not connected");
+      setStatus("printing");
 
-    console.log("widthDot", widthDot);
-    console.log("heightDot", heightDot);
-    console.log("rowBytes", rowBytes);
-    console.log("data", data);
+      let widthDot, heightDot, rowBytes, data;
 
-    /* --- GS v 0 m xL xH yL yH --- */
-    const m = 0x00; // 通常倍率
-    const xL = (rowBytes * 1) & 0xff;
-    const xH = (rowBytes * 1) >> 8;
-    const yL = heightDot & 0xff;
-    const yH = heightDot >> 8;
+      if (place === "center") {
+        ({ widthDot, heightDot, rowBytes, data } = textToRasterCenter(
+          text,
+          60
+        ));
+      } else {
+        ({ widthDot, heightDot, rowBytes, data } = textToRaster(text, 20));
+      }
 
-    await send(Uint8Array.from([0x1b, 0x40]), "ESC @"); // 初期化
-    await send(
-      Uint8Array.from([0x1d, 0x76, 0x30, m, xL, xH, yL, yH]),
-      "GS v 0"
-    );
-    await send(data); // ラスター本体
-    for (let i = 0; i < 5; i++) {
-      await send(Uint8Array.from([0x0a]), "LF");
-    }
-    // フルカット（用紙を完全に切り離す）
-    // await send(Uint8Array.from([0x1b, 0x69]), "ESC i");
-    // // または、パーシャルカット（切りかけ）
-    // await send(Uint8Array.from([0x1b, 0x6d]), "ESC m");
-    // // 0x41 = 'A' → full cut（n 行フィード後にフルカット）
-    // await send(Uint8Array.from([0x1d, 0x56, 0x41, 0x03]), "GS V A 3");
-    await send(Uint8Array.from([0x1d, 0x56, 0x00, 0x10]));
+      console.log("widthDot", widthDot);
+      console.log("heightDot", heightDot);
+      console.log("rowBytes", rowBytes);
+      console.log("data", data);
 
-    setStatus("done");
-  }, []);
+      /* --- GS v 0 m xL xH yL yH --- */
+      const m = 0x00; // 通常倍率
+      const xL = (rowBytes * 1) & 0xff;
+      const xH = (rowBytes * 1) >> 8;
+      const yL = heightDot & 0xff;
+      const yH = heightDot >> 8;
 
-  const printBitmapCenter = useCallback(async (text: string) => {
-    if (!deviceRef.current) throw new Error("Device not connected");
-    setStatus("printing");
+      await send(Uint8Array.from([0x1b, 0x40]), "ESC @"); // 初期化
+      await send(
+        Uint8Array.from([0x1d, 0x76, 0x30, m, xL, xH, yL, yH]),
+        "GS v 0"
+      );
+      await send(data); // ラスター本体
+      for (let i = 0; i < 5; i++) {
+        await send(Uint8Array.from([0x0a]), "LF");
+      }
+      await send(Uint8Array.from([0x1d, 0x56, 0x00, 0x10]));
 
-    const { widthDot, heightDot, rowBytes, data } = textToRasterCenter(
-      text,
-      60
-    );
-
-    console.log("widthDot", widthDot);
-    console.log("heightDot", heightDot);
-    console.log("rowBytes", rowBytes);
-    console.log("data", data);
-
-    /* --- GS v 0 m xL xH yL yH --- */
-    const m = 0x00; // 通常倍率
-    const xL = (rowBytes * 1) & 0xff;
-    const xH = (rowBytes * 1) >> 8;
-    const yL = heightDot & 0xff;
-    const yH = heightDot >> 8;
-
-    await send(Uint8Array.from([0x1b, 0x40]), "ESC @"); // 初期化
-    await send(Uint8Array.from([0x1b, 0x61, 0x01]), "ESC a 1");
-    await send(
-      Uint8Array.from([0x1d, 0x76, 0x30, m, xL, xH, yL, yH]),
-      "GS v 0"
-    );
-    await send(data); // ラスター本体
-    for (let i = 0; i < 5; i++) {
-      await send(Uint8Array.from([0x0a]), "LF");
-    }
-    // フルカット（用紙を完全に切り離す）
-    // await send(Uint8Array.from([0x1b, 0x69]), "ESC i");
-    // // または、パーシャルカット（切りかけ）
-    // await send(Uint8Array.from([0x1b, 0x6d]), "ESC m");
-    // // 0x41 = 'A' → full cut（n 行フィード後にフルカット）
-    // await send(Uint8Array.from([0x1d, 0x56, 0x41, 0x03]), "GS V A 3");
-    await send(Uint8Array.from([0x1d, 0x56, 0x00, 0x10]));
-
-    setStatus("done");
-  }, []);
+      setStatus("done");
+    },
+    []
+  );
 
   // /* ---------- デバッグ: 正方形ベタ塗り ---------- */
 
@@ -177,5 +146,5 @@ export function useEscPosPrinter() {
   //   setStatus("done");
   // };
 
-  return { status, connect, print, printBitmap, printBitmapCenter };
+  return { status, connect, print, printBitmap };
 }
