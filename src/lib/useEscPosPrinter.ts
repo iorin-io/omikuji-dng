@@ -75,8 +75,6 @@ export function useEscPosPrinter() {
     const dev = deviceRef.current;
     if (!dev) throw new Error("Device not connected");
 
-    setStatus("printing");
-
     const body = Uint8Array.from(
       Enc.convert(text + "\n", { to: "SJIS", type: "array" })
     );
@@ -96,7 +94,6 @@ export function useEscPosPrinter() {
   const printBitmap = useCallback(
     async ({ text, place = "left", fontSize = 20 }: PrintBitmapOptions) => {
       if (!deviceRef.current) throw new Error("Device not connected");
-      setStatus("printing");
 
       let widthDot, heightDot, rowBytes, data;
 
@@ -136,8 +133,6 @@ export function useEscPosPrinter() {
       await send(data); // ラスター本体
 
       await send(Uint8Array.from([0x1d, 0x56, 0x00, 0x10]));
-
-      setStatus("done");
     },
     []
   );
@@ -182,19 +177,16 @@ export function useEscPosPrinter() {
     if (!deviceRef.current) throw new Error("Device not connected");
     setStatus("printing");
     await send(Uint8Array.from([0x1b, 0x40]), "ESC @");
-    setStatus("done");
   }, []);
 
   const cut = useCallback(async () => {
     if (!deviceRef.current) throw new Error("Device not connected");
-    setStatus("printing");
     await send(Uint8Array.from([0x1d, 0x56, 0x41, 0x10]), "CUT");
     setStatus("done");
   }, []);
 
   const printQRCode = useCallback(async (url: string, size = 200) => {
     if (!deviceRef.current) throw new Error("Device not connected");
-    setStatus("printing");
 
     // 1. Canvas に QR を描画
     const canvas = document.createElement("canvas");
@@ -235,8 +227,6 @@ export function useEscPosPrinter() {
     for (let i = 0; i < 4; i++) {
       await send(Uint8Array.from([0x0a]), "LF");
     }
-
-    setStatus("done");
   }, []);
 
   return {
