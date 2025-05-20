@@ -17,6 +17,7 @@
     "encoding-japanese": "^2.2.0",
     "next": "15.3.2",
     "openai": "^4.100.0",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -24,6 +25,7 @@
     "@cloudflare/next-on-pages": "^1.13.12",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20.17.48",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/w3c-web-usb": "^1.0.10",
