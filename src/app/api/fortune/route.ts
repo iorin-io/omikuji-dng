@@ -1,4 +1,6 @@
 // app/api/fortune/route.ts
+export const runtime = "edge";
+
 import { NextResponse } from "next/server";
 import type { FortuneRank } from "../../../lib/aiFortune";
 import { generateFortuneText } from "../../../lib/aiFortune";
