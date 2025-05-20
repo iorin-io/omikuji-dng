@@ -2,7 +2,7 @@
 export function textToRasterLeft(
   text: string,
   fontPx: number,
-  fontFamily = "'Noto Sans JP'",
+  fontFamily = "'Yuji Boku'",
   maxWidthDot = 384
 ) {
   /* ---------- フォント設定 ---------- */
@@ -57,7 +57,7 @@ export function textToRasterLeft(
 export function textToRasterCenter(
   text: string,
   fontPx: number,
-  fontFamily = "'Noto Sans JP'",
+  fontFamily = "'Yuji Boku'",
   maxWidthDot = 384
 ) {
   // フォント設定
@@ -116,7 +116,7 @@ export function textToRasterCenter(
 export function textToRasterRight(
   text: string,
   fontPx: number,
-  fontFamily = "'Noto Sans JP'",
+  fontFamily = "'Yuji Boku'",
   maxWidthDot = 384
 ) {
   // フォント設定
