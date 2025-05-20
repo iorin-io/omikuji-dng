@@ -23,6 +23,11 @@ const Button = styled.button<{ disabled: boolean }>`
   font-size: 50px;
 `;
 
+const SmallButton = styled(Button)`
+  font-size: 24px;
+  padding: 0.25rem 0.5rem;
+`;
+
 const ErrorText = styled.p`
   margin-top: 0.5rem;
   color: #dc2626; /* red-500 */
@@ -38,6 +43,18 @@ export default function PrintReceiptButton() {
     useEscPosPrinter();
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // 接続ボタンハンドラ
+  const handleConnect = async () => {
+    setError(null);
+    const ok = await connect();
+    if (!ok) {
+      setError("プリンタの接続に失敗しました");
+    } else {
+      setIsConnected(true);
+    }
+  };
 
   const handlePrint = async () => {
     setError(null);
@@ -149,25 +166,38 @@ export default function PrintReceiptButton() {
 
     await cut();
   };
-  // ボタンが生成中 or 接続中 or 印刷中 のときは押せないように
-  const disabled =
-    isGenerating || status === "connecting" || status === "printing";
+  // ボタン制御
+  const connectDisabled = status === "connecting" || isConnected;
+  const printDisabled = isGenerating || status === "printing" || !isConnected;
 
-  // 表示テキストの切り替え
-  let label = "おみくじを引く";
-  if (isGenerating) label = "ヌルの神が考え中...";
-  else if (status === "printing") label = "印刷中...";
-  else if (status === "done") label = "おみくじを引く";
+  const printLabel = isGenerating
+    ? "ヌルの神が考え中..."
+    : status === "printing"
+    ? "印刷中..."
+    : "おみくじを引く";
 
   return (
     <>
       <div>
-        <Button
-          onClick={handlePrint}
-          disabled={disabled}
+        <SmallButton
           className={yujiBoku.className}
+          onClick={handleConnect}
+          disabled={connectDisabled}
         >
-          {label}
+          {isConnected
+            ? "接続済み"
+            : status === "connecting"
+            ? "接続中..."
+            : "プリンタ接続"}
+        </SmallButton>
+      </div>
+      <div style={{ marginTop: "1rem" }}>
+        <Button
+          className={yujiBoku.className}
+          onClick={handlePrint}
+          disabled={printDisabled}
+        >
+          {printLabel}
         </Button>
       </div>
       <div>{error && <ErrorText>{error}</ErrorText>}</div>
