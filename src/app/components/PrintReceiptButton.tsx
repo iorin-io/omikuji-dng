@@ -180,6 +180,14 @@ export default function PrintReceiptButton() {
     <>
       <div>
         {isConnected ? (
+          <Button
+            className={yujiBoku.className}
+            onClick={handlePrint}
+            disabled={printDisabled}
+          >
+            {printLabel}
+          </Button>
+        ) : (
           <SmallButton
             className={yujiBoku.className}
             onClick={handleConnect}
@@ -191,14 +199,6 @@ export default function PrintReceiptButton() {
               ? "接続中..."
               : "プリンタ接続"}
           </SmallButton>
-        ) : (
-          <Button
-            className={yujiBoku.className}
-            onClick={handlePrint}
-            disabled={printDisabled}
-          >
-            {printLabel}
-          </Button>
         )}
       </div>
       <div>{error && <ErrorText>{error}</ErrorText>}</div>
