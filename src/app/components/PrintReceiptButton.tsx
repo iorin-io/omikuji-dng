@@ -153,7 +153,7 @@ export default function PrintReceiptButton() {
     await printSpace(5);
 
     await printQRCode(
-      `http://twitter.com/share?url=${newsUrl}&text=${fortune.summary}&related=labDNG,ochyai&hashtags=落合陽一,ｼﾝｷﾞｭﾗってｺﾝｳﾞｨｳﾞｨ展,ｼﾝｷﾞｭﾗみくじ`,
+      `http://twitter.com/share?url=${newsUrl}&text=【${rank}】\n${fortune.summary}&related=labDNG,ochyai&hashtags=落合陽一,ｼﾝｷﾞｭﾗってｺﾝｳﾞｨｳﾞｨ展,ｼﾝｷﾞｭﾗみくじ`,
       350
     );
     await printBitmap({
