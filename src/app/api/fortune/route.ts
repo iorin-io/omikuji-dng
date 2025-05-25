@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import type { FortuneRank } from "../../../lib/aiFortune";
 import { generateFortuneText } from "../../../lib/aiFortune";
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
   const { rank } = (await req.json()) as { rank?: FortuneRank };
 
   const validRanks = ["大吉", "中吉", "小吉", "吉", "末吉", "凶"] as const;
@@ -31,11 +31,8 @@ export async function POST(req: Request) {
     };
 
     return NextResponse.json({ fortune: data });
-  } catch (e) {
-    console.error("Fortune generation error:", e);
-    return NextResponse.json(
-      { error: "運勢の生成中にエラーが発生しました。" },
-      { status: 500 }
-    );
+  } catch {
+    const res = POST(req);
+    return res;
   }
 }

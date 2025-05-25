@@ -72,19 +72,18 @@ export default function PrintReceiptButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rank }),
       });
-
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
-
-      const { fortune: data } = (await res.json()) as { fortune: FortuneData };
-      fortune = data;
+      const json = (await res.json()) as {
+        fortune?: FortuneData;
+        error?: string;
+      };
+      if (!res.ok || !json.fortune)
+        throw new Error(json.error || "生成に失敗しました");
+      fortune = json.fortune;
 
       console.log("運勢データ:", fortune);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
       setError("運勢の取得に失敗しました");
-      setIsGenerating(false);
       return;
     }
 

@@ -16,46 +16,17 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function generateFortuneText(
-  rank: FortuneRank,
-  retries = 3
-): Promise<FortuneData> {
-  if (retries <= 0) {
-    throw new Error("運勢データの取得に失敗しました（リトライ上限超過）");
-  }
+export async function generateFortuneText(rank: FortuneRank): Promise<string> {
+  // ① 出力フォーマットを system で指示
+  const systemPrompt = fortuneSystemPrompt;
 
-  const fortuneText = await fetchFortuneText(rank);
-
-  try {
-    const parsed = JSON.parse(fortuneText) as Partial<FortuneData>;
-    const keys: Array<keyof FortuneData> = [
-      "summary",
-      "love",
-      "work",
-      "health",
-      "money",
-    ];
-    const allExist = keys.every((k) => typeof parsed[k] === "string");
-    if (!allExist) {
-      throw new Error("キー不足");
-    }
-    return parsed as FortuneData;
-  } catch (err) {
-    console.warn(`パースエラーまたはキー不足（残り${retries - 1}回）：`, err);
-
-    return generateFortuneText(rank, retries - 1);
-  }
-}
-
-async function fetchFortuneText(rank: FortuneRank): Promise<string> {
-  const systemPrompt = fortuneSystemPrompt.trim();
   const userPrompt = `運勢レベルは「${rank}」です。`;
 
   const resp = await openai.chat.completions.create({
     model: "gpt-4.1-mini-2025-04-14",
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: "system", content: systemPrompt.trim() },
+      { role: "user", content: userPrompt.trim() },
     ],
     temperature: 0.7,
   });
